@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#import "FIRAppDistributionUIService.h"
+#import "FirebaseAppDistribution/Sources/FIRAppDistributionUIService.h"
+#import "FirebaseAppDistribution/Sources/FIRFADLogger.h"
+#import "FirebaseCore/Sources/Private/FirebaseCoreInternal.h"
+
 #import <AuthenticationServices/AuthenticationServices.h>
 #import <SafariServices/SafariServices.h>
 #import <UIKit/UIKit.h>
