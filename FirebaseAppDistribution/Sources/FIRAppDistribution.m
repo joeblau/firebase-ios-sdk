@@ -32,7 +32,7 @@
 @interface FIRAppDistribution () <FIRLibrary, FIRAppDistributionInstanceProvider>
 @property(nonatomic) BOOL isTesterSignedIn;
 
-@property(nullable, nonatomic) FIRAppDistributionUIService *UIService;
+@property(nullable, nonatomic) FIRAppDistributionUIService *uiService;
 
 @end
 
@@ -71,8 +71,8 @@ NSString *const kFIRFADSignInStateKey = @"FIRFADSignInState";
 
   if (self) {
     [GULAppDelegateSwizzler proxyOriginalDelegate];
-    self.UIService = [FIRAppDistributionUIService sharedInstance];
-    [GULAppDelegateSwizzler registerAppDelegateInterceptor:self.UIService];
+    self.uiService = [FIRAppDistributionUIService sharedInstance];
+    [GULAppDelegateSwizzler registerAppDelegateInterceptor:self.uiService];
   }
 
   return self;
@@ -135,7 +135,7 @@ NSString *const kFIRFADSignInStateKey = @"FIRFADSignInState";
     return;
   }
 
-  [self.UIService initializeUIState];
+  [self.uiService initializeUIState];
   FIRInstallations *installations = [FIRInstallations installations];
 
   // Get a Firebase Installation ID (FID).
@@ -148,7 +148,7 @@ NSString *const kFIRFADSignInStateKey = @"FIRFADSignInState";
       completion([self NSErrorForErrorCodeAndMessage:FIRAppDistributionErrorUnknown
                                              message:description]);
 
-      [self.UIService resetUIState];
+      [self.uiService resetUIState];
       return;
     }
 
@@ -159,7 +159,7 @@ NSString *const kFIRFADSignInStateKey = @"FIRFADSignInState";
 
     FIRFADDebugLog(@"Registration URL: %@", requestURL);
 
-    [self.UIService
+    [self.uiService
         appDistributionRegistrationFlow:[[NSURL alloc] initWithString:requestURL]
                          withCompletion:^(NSError *_Nullable error) {
                            FIRFADInfoLog(@"Tester sign in complete.");
@@ -173,19 +173,18 @@ NSString *const kFIRFADSignInStateKey = @"FIRFADSignInState";
 }
 
 - (void)persistTesterSignInStateAndHandleCompletion:(void (^)(NSError *_Nullable error))completion {
-  [FIRFADApiService fetchReleasesWithCompletion:^(NSArray *_Nullable releases,
-                                                  NSError *_Nullable error) {
-    if (error) {
-      FIRFADErrorLog(@"Could not fetch releases with code %ld - %@", [error code],
-                     [error localizedDescription]);
-      completion([self NSErrorForErrorCodeAndMessage:FIRAppDistributionErrorAuthenticationFailure
-                                             message:@"Failed to authenticate the user"]);
-      return;
-    }
+  [FIRFADApiService
+      fetchReleasesWithCompletion:^(NSArray *_Nullable releases, NSError *_Nullable error) {
+        if (error) {
+          FIRFADErrorLog(@"Tester Sign in persistence. Could not fetch releases with code %ld - %@",
+                         [error code], [error localizedDescription]);
+          completion([self mapFetchReleasesError:error]);
+          return;
+        }
 
-    [[GULUserDefaults standardUserDefaults] setBool:YES forKey:kFIRFADSignInStateKey];
-    completion(nil);
-  }];
+        [[GULUserDefaults standardUserDefaults] setBool:YES forKey:kFIRFADSignInStateKey];
+        completion(nil);
+      }];
 }
 
 - (NSString *)getAppName {
@@ -303,7 +302,7 @@ NSString *const kFIRFADSignInStateKey = @"FIRFADSignInState";
                                                        style:UIAlertActionStyleDefault
                                                      handler:^(UIAlertAction *action) {
                                                        // precaution to ensure window gets destroyed
-                                                       [self.UIService resetUIState];
+                                                       [self.uiService resetUIState];
                                                        completion(nil, nil);
                                                      }];
 
@@ -311,7 +310,7 @@ NSString *const kFIRFADSignInStateKey = @"FIRFADSignInState";
     [alert addAction:yesButton];
 
     // Create an empty window + viewController to host the Safari UI.
-    [self.UIService showUIAlert:alert];
+    [self.uiService showUIAlert:alert];
   }
 }
 @end
